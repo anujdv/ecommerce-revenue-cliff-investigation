@@ -48,6 +48,29 @@ Compared with the May 1–12 average, revenue on May 13 appears lower, but the d
 Order volume on May 13 was 298, which is in line with the surrounding days. However, AOV fell to ₹6,325.40, the lowest AOV in the period.
 
 
+# Including payment status
+
+```sql
+SELECT
+    DATE(created_at) AS order_date,
+	payment_status,
+    COUNT(DISTINCT order_id) AS orders,
+    SUM(total) AS revenue
+FROM ecom.orders
+WHERE created_at >= '2026-05-01'
+  AND created_at < '2026-05-21'
+GROUP BY DATE(created_at),payment_status
+ORDER BY order_date;
+```
+
+<img width="2964" height="692" alt="Metabase-New question-10_2_2026, 3_18_04 PM" src="https://github.com/user-attachments/assets/e44c29c3-c428-4087-9564-cf0186c689c3" />
+
+### Initial observations
+
+- May 13 clearly has an anomaly, the the number of failed payments are significantly higher on this day.
+
+
+  
 
 
 
