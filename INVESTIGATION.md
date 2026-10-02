@@ -1,4 +1,6 @@
-# Ran the baseline query.
+# Baseline Analysis
+
+I ran the baseline query for May 1–20 to compare daily revenue, order volume, and AOV around May 13.
 
 ```sql
 SELECT
@@ -11,6 +13,7 @@ WHERE created_at >= '2026-05-01'
   AND created_at < '2026-05-21'
 GROUP BY DATE(created_at)
 ORDER BY order_date;
+```
 
 
 | order_date   | orders | revenue      | aov      |
@@ -46,7 +49,6 @@ Order volume on May 13 was 298, which is in line with the surrounding days. Howe
 
 
 
-# 
 
 
 
