@@ -103,12 +103,22 @@ Next, I checked whether the payment failures were coming from one particular gat
 ```sql
 SELECT
     DATE(o.created_at) AS order_date,
-    o.payment_status,
-    o.status,
-    pm.method_name,
     pt.gateway,
-    COUNT(DISTINCT o.order_id) AS failed_orders,
-    SUM(o.total) AS total_failed_amount
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    COUNT(DISTINCT CASE
+        WHEN o.payment_status = 'failed'
+             AND pt.status = 'failed'
+        THEN o.order_id
+    END) AS failed_orders,
+    ROUND(
+        100.0 * COUNT(DISTINCT CASE
+            WHEN o.payment_status = 'failed'
+                 AND pt.status = 'failed'
+            THEN o.order_id
+        END)
+        / NULLIF(COUNT(DISTINCT o.order_id), 0),
+        2
+    ) AS failure_rate
 FROM ecom.orders o
 JOIN ecom.payment_intents pi
     ON o.order_id = pi.order_id
@@ -119,28 +129,71 @@ JOIN ecom.payment_transactions pt
 WHERE
     o.created_at >= '2026-05-10'
     AND o.created_at < '2026-05-20'
-    AND o.payment_status = 'failed'
     AND pm.method_name = 'upi'
-    AND pt.status = 'failed'
 GROUP BY
     DATE(o.created_at),
-    o.payment_status,
-    o.status,
-    pm.method_name,
     pt.gateway
-ORDER BY order_date;
+ORDER BY
+    order_date,
+    pt.gateway;
 ```
+
+| order_date   | gateway  | total_orders | failed_orders | failure_rate |
+|--------------|----------|-------------:|-------------:|-------------:|
+| May 10, 2026 | cash     | 14           | 1            | 7.14         |
+| May 10, 2026 | payu     | 19           | 0            | 0            |
+| May 10, 2026 | razorpay | 60           | 3            | 5            |
+| May 10, 2026 | stripe   | 27           | 0            | 0            |
+| May 11, 2026 | cash     | 16           | 1            | 6.25         |
+| May 11, 2026 | payu     | 16           | 0            | 0            |
+| May 11, 2026 | razorpay | 33           | 0            | 0            |
+| May 11, 2026 | stripe   | 17           | 1            | 5.88         |
+| May 12, 2026 | cash     | 13           | 0            | 0            |
+| May 12, 2026 | payu     | 14           | 0            | 0            |
+| May 12, 2026 | razorpay | 48           | 1            | 2.08         |
+| May 12, 2026 | stripe   | 15           | 1            | 6.67         |
+| **May 13, 2026** | **cash**     | **32**  | **28** | **87.5** |
+| **May 13, 2026** | **payu**     | **47**  | **30** | **63.83** |
+| **May 13, 2026** | **razorpay** | **100** | **79** | **79** |
+| **May 13, 2026** | **stripe**   | **37**  | **24** | **64.86** |
+| May 14, 2026 | cash     | 10           | 0            | 0            |
+| May 14, 2026 | payu     | 21           | 0            | 0            |
+| May 14, 2026 | razorpay | 40           | 2            | 5            |
+| May 14, 2026 | stripe   | 12           | 0            | 0            |
+| May 15, 2026 | cash     | 9            | 0            | 0            |
+| May 15, 2026 | payu     | 17           | 0            | 0            |
+| May 15, 2026 | razorpay | 30           | 1            | 3.33         |
+| May 15, 2026 | stripe   | 16           | 2            | 12.5         |
+| May 16, 2026 | cash     | 13           | 0            | 0            |
+| May 16, 2026 | payu     | 24           | 0            | 0            |
+| May 16, 2026 | razorpay | 48           | 1            | 2.08         |
+| May 16, 2026 | stripe   | 21           | 3            | 14.29        |
+| May 17, 2026 | cash     | 13           | 0            | 0            |
+| May 17, 2026 | payu     | 22           | 2            | 9.09         |
+| May 17, 2026 | razorpay | 47           | 4            | 8.51         |
+| May 17, 2026 | stripe   | 20           | 0            | 0            |
+| May 18, 2026 | cash     | 18           | 0            | 0            |
+| May 18, 2026 | payu     | 31           | 5            | 16.13        |
+| May 18, 2026 | razorpay | 51           | 1            | 1.96         |
+| May 18, 2026 | stripe   | 21           | 0            | 0            |
+| May 19, 2026 | cash     | 9            | 0            | 0            |
+| May 19, 2026 | payu     | 26           | 3            | 11.54        |
+| May 19, 2026 | razorpay | 37           | 2            | 5.41         |
+| May 19, 2026 | stripe   | 16           | 0            | 0            |
+
+<img width="2164" height="644" alt="Metabase-New question-10_2_2026, 4_45_29 PM" src="https://github.com/user-attachments/assets/f685d683-dfe0-4aae-9ecb-e43372ea7b62" />
+
 
 ### What I found
 
 On May 13, failure rates increased across multiple gateways:
 
-| Gateway | May 13 failure rate |
-|---|---:|
-| Razorpay | 79% |
-| PayU | 63.83% |
-| Stripe | 64.86% |
-| Cash | 87.5% |
+| order_date   | gateway  | total_orders | failed_orders | failure_rate |
+|--------------|----------|-------------:|-------------:|-------------:|
+| **May 13, 2026** | **cash**     | **32**  | **28** | **87.5** |
+| **May 13, 2026** | **payu**     | **47**  | **30** | **63.83** |
+| **May 13, 2026** | **razorpay** | **100** | **79** | **79** |
+| **May 13, 2026** | **stripe**   | **37**  | **24** | **64.86** |
 
 Since the spike was present across multiple gateways, it did not look like an issue with just one provider.
 
