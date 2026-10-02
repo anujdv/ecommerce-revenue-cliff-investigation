@@ -289,22 +289,22 @@ ORDER BY orders DESC;
 
 ### What this means
 
-134 orders were linked to at least one gateway timeout on May 13.
+134 orders were affected by at least one gateway timeout on May 13.
 
 The total value of these orders was ₹8,66,262.50, and all of them had a final payment status of `failed`.
 
-I am treating this as affected order value rather than confirmed lost revenue, since the data does not tell me whether a customer later came back and completed the purchase through another order.
+I am treating this as affected order value and not confirmed lost revenue, since I cannot tell from the available data if any of these customers later placed another successful order.
 
 ---
 
 ## Conclusion
 
-The main issue on May 13 appears to have been payment failures.
+May 13 had a clear spike in payment failures.
 
-The problem was not limited to one gateway. Multiple gateways showed a large increase in failures, and `GATEWAY_TIMEOUT` was by far the most common error.
+The failures were not limited to one gateway. Razorpay, PayU, Stripe and Cash all showed a large increase in failure rates on the same day. The main error was `GATEWAY_TIMEOUT`, with 168 such failed transactions.
 
-There were 168 timeout failures linked to 134 orders worth ₹8,66,262.50.
+These timeouts were linked to 134 failed orders worth ₹8,66,262.50.
 
-The data points to a payment infrastructure or shared dependency issue as the likely reason for the increase in failed payments and the resulting revenue decline.
+Based on this, the payment system looks like the main reason behind the drop in revenue on May 13. Since the same timeout happened across multiple gateways, this looks more like a shared payment infrastructure issue than a problem with one gateway.
 
-I could identify the failure pattern and its business impact, but the available data does not show the exact technical root cause behind the timeout.
+I could identify where the problem happened and how much order value was affected, but I cannot find the exact technical reason for the timeout from the data available to me.
