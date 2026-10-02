@@ -84,6 +84,7 @@ ORDER BY
     order_date,
     payment_status;
 ```
+<img width="2164" height="644" alt="Metabase-New question-10_2_2026, 4_41_49 PM" src="https://github.com/user-attachments/assets/2a3bd94f-9954-4000-b30e-1bca36ebb7c1" />
 
 ### What I found
 
