@@ -1,5 +1,6 @@
-Ran the baseline query.
+# Ran the baseline query.
 
+```sql
 SELECT
     DATE(created_at) AS order_date,
     COUNT(DISTINCT order_id) AS orders,
@@ -42,6 +43,10 @@ May 13 had the lowest revenue in the May 1–20 period at ₹18,84,969.96.
 Compared with the May 1–12 average, revenue on May 13 appears lower, but the decline is not close to the ~60% cliff described in the case prompt.
 
 Order volume on May 13 was 298, which is in line with the surrounding days. However, AOV fell to ₹6,325.40, the lowest AOV in the period.
+
+
+
+# 
 
 
 
