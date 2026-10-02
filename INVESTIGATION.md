@@ -230,13 +230,21 @@ The main error was:
 
 There were 168 failed transactions with this error:
 
-| Gateway | Timeout failures |
-|---|---:|
-| Razorpay | 90 |
-| PayU | 28 |
-| Cash | 27 |
-| Stripe | 23 |
-| **Total** | **168** |
+| gateway  | error_code      | error_message                      | failed_transactions |
+|----------|-----------------|------------------------------------|--------------------:|
+| razorpay | GATEWAY_TIMEOUT | Gateway did not respond within 30s | 90                  |
+| payu     | GATEWAY_TIMEOUT | Gateway did not respond within 30s | 28                  |
+| cash     | GATEWAY_TIMEOUT | Gateway did not respond within 30s | 27                  |
+| stripe   | GATEWAY_TIMEOUT | Gateway did not respond within 30s | 23                  |
+| razorpay | NETWORK         | Payment failed                     | 3                   |
+| razorpay | BANK_DECLINE    | Payment failed                     | 3                   |
+| payu     | FRAUD           | Payment failed                     | 3                   |
+| stripe   | BANK_DECLINE    | Payment failed                     | 2                   |
+| stripe   | NETWORK         | Payment failed                     | 1                   |
+| cash     | NETWORK         | Payment failed                     | 1                   |
+| payu     | NETWORK         | Payment failed                     | 1                   |
+| razorpay | FRAUD           | Payment failed                     | 1                   |
+| razorpay | UPI_TIMEOUT     | Payment failed                     | 1                   |
 
 Other errors such as bank declines, network errors and fraud checks were much smaller in comparison.
 
