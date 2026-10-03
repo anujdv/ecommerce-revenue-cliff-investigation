@@ -348,7 +348,7 @@ Since the spike was present across multiple gateways, it did not look like an is
 
 ---
 
-## 4. Payment Failure Reason Investigation
+## 5. Payment Failure Reason Investigation
 
 I then checked the error codes for failed transactions on May 13.
 
@@ -400,8 +400,50 @@ Other errors such as bank declines, network errors and fraud checks were much sm
 The same timeout appearing across different gateways made a shared payment infrastructure or dependency a more likely explanation than a problem with one gateway.
 
 ---
+## 6. Outage Window
 
-## 5. Business Impact
+After identifying the payment failure spike on May 13, I broke the failed transactions down by hour to determine whether the issue lasted throughout the day or was concentrated within a specific time window.
+
+### Query
+
+```sql
+SELECT
+    DATE_TRUNC('hour', pt.txn_time) AS hour,
+    COUNT(*) AS failed_transactions,
+    COUNT(*) FILTER (
+        WHERE pt.error_code = 'GATEWAY_TIMEOUT'
+    ) AS gateway_timeouts
+FROM ecom.payment_transactions pt
+WHERE pt.txn_time >= '2026-05-13'
+  AND pt.txn_time < '2026-05-14'
+  AND pt.status = 'failed'
+GROUP BY DATE_TRUNC('hour', pt.txn_time)
+ORDER BY hour;
+```
+| hour | failed_transactions | gateway_timeouts |
+|---|---:|---:|
+| May 13, 2026, 6:00 AM | 1 | 0 |
+| May 13, 2026, 9:00 AM | 15 | 15 |
+| May 13, 2026, 10:00 AM | 23 | 21 |
+| May 13, 2026, 11:00 AM | 16 | 15 |
+| May 13, 2026, 12:00 PM | 12 | 11 |
+| May 13, 2026, 1:00 PM | 24 | 22 |
+| May 13, 2026, 2:00 PM | 27 | 27 |
+| May 13, 2026, 3:00 PM | 32 | 27 |
+| May 13, 2026, 4:00 PM | 31 | 30 |
+| May 13, 2026, 5:00 PM | 1 | 0 |
+| May 13, 2026, 6:00 PM | 1 | 0 |
+| May 13, 2026, 11:00 PM | 1 | 0 |
+
+#### What I found
+The payment failure spike was concentrated in a specific window on May 13 rather than lasting throughout the entire day.
+Gateway timeout failures first increased significantly around 9:00 AM and continued through 4:00 PM. The highest number of failed transactions occurred between 2:00 PM and 4:00 PM, with 27, 32 and 31 failed transactions respectively.
+By 5:00 PM, failed transactions dropped back to 1 and there were no gateway timeouts, indicating that the issue had largely recovered.
+Based on the hourly data, the main incident window was approximately 9:00 AM to 4:00 PM, with recovery by 5:00 PM.
+The hourly analysis identifies the affected window, but it does not provide the exact minute when the incident started or ended.
+
+
+## 6. Business Impact
 
 I then checked which orders were linked to the gateway timeout failures.
 
