@@ -487,6 +487,32 @@ The total value of these orders was ₹8,66,262.50, and all of them had a final 
 I am treating this as affected order value and not confirmed lost revenue, since I cannot tell from the available data if any of these customers later placed another successful order.
 
 ---
+## 7. Monday Morning Actions
+
+Based on the investigation, I would recommend two safeguards to detect and mitigate a similar incident.
+
+### 1. Add real-time payment failure monitoring and alerting
+
+Set up monitoring for payment failure rates by **payment method, gateway and error type**, with an alert when the failure rate moves significantly above its normal baseline.
+
+For example, the May 13 UPI failure rate reached **71.79%**, compared with **2.22%** on May 12. The gateway timeout spike was also concentrated between approximately **9:00 AM and 4:00 PM**.
+
+An alert based on payment failure rate and `GATEWAY_TIMEOUT` errors would allow the operations team to identify the issue much earlier instead of discovering the revenue impact after the day has ended.
+
+### 2. Add payment-method fallback and graceful degradation
+
+Since the failure spike was concentrated in **UPI**, the checkout flow should detect when UPI is experiencing elevated failures and guide customers toward alternative payment methods such as cards, netbanking or wallets.
+
+The system could temporarily reduce the prominence of the affected payment method or automatically surface alternative methods when its failure rate crosses a defined threshold.
+
+This would reduce the dependency on a single payment rail and help preserve successful checkouts during a UPI outage.
+
+### Expected impact
+
+These safeguards address both sides of the incident:
+
+- **Monitoring and alerting** would reduce the time taken to detect the problem.
+- **Payment-method fallback** would reduce the number of customers unable to complete checkout while the affected payment rail is unavailable.
 
 ## Conclusion
 
