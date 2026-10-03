@@ -115,32 +115,6 @@ Paid orders dropped from 290 on May 12 to 141 on May 13, while realized revenue 
 
 I checked payment status around May 13 to see whether failed payments increased on the same day.
 
-### Query
-
-```sql
-SELECT
-    DATE(created_at) AS order_date,
-    payment_status,
-    COUNT(DISTINCT order_id) AS orders,
-    SUM(total) AS order_value
-FROM ecom.orders
-WHERE created_at >= '2026-05-10'
-  AND created_at < '2026-05-20'
-GROUP BY
-    DATE(created_at),
-    payment_status
-ORDER BY
-    order_date,
-    payment_status;
-```
-<img width="2164" height="644" alt="Metabase-New question-10_2_2026, 4_41_49 PM" src="https://github.com/user-attachments/assets/2a3bd94f-9954-4000-b30e-1bca36ebb7c1" />
-
-## What I found
-There was a clear increase in failed payments on May 13 compared with the surrounding days.
-This made payment failure one of the main areas to investigate further.
-
-I then drilled down by payment method and found that the increase was mainly concentrated in UPI.
-
 
 ### Query
 
@@ -170,10 +144,109 @@ This made payment failure one of the main areas to investigate further.
 
 ---
 
-## 3. Payment Gateway Investigation
+## 3. Payment Method Investigation
 
-Next, I checked whether the payment failures were coming from one particular gateway.
+After seeing the increase in payment failures on May 13, I drilled down by payment method to see where the spike was coming from.
 
+### Query
+
+```sql
+SELECT
+    DATE(o.created_at) AS order_date,
+    pm.method_name,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    COUNT(DISTINCT CASE
+        WHEN o.payment_status = 'failed'
+             AND pt.status = 'failed'
+        THEN o.order_id
+    END) AS failed_orders,
+    ROUND(
+        100.0 * COUNT(DISTINCT CASE
+            WHEN o.payment_status = 'failed'
+                 AND pt.status = 'failed'
+            THEN o.order_id
+        END)
+        / NULLIF(COUNT(DISTINCT o.order_id), 0),
+        2
+    ) AS failure_rate
+FROM ecom.orders o
+JOIN ecom.payment_intents pi
+    ON o.order_id = pi.order_id
+JOIN ecom.payment_methods pm
+    ON pi.payment_method_id = pm.payment_method_id
+JOIN ecom.payment_transactions pt
+    ON pi.payment_intent_id = pt.payment_intent_id
+WHERE
+    o.created_at >= '2026-05-10'
+    AND o.created_at < '2026-05-20'
+GROUP BY
+    DATE(o.created_at),
+    pm.method_name
+ORDER BY
+    order_date,
+    pm.method_name;
+```
+| order_date   | method_name | total_orders | failed_orders | failure_rate |
+| ------------ | ----------- | ------------ | ------------- | ------------ |
+| May 10, 2026 | card        | 122          | 5             | 4.1          |
+| May 10, 2026 | cod         | 36           | 1             | 2.78         |
+| May 10, 2026 | netbanking  | 34           | 0             | 0            |
+| May 10, 2026 | upi         | 120          | 4             | 3.33         |
+| May 10, 2026 | wallet      | 49           | 1             | 2.04         |
+| May 11, 2026 | card        | 106          | 4             | 3.77         |
+| May 11, 2026 | cod         | 30           | 0             | 0            |
+| May 11, 2026 | netbanking  | 38           | 1             | 2.63         |
+| May 11, 2026 | upi         | 82           | 2             | 2.44         |
+| May 11, 2026 | wallet      | 41           | 1             | 2.44         |
+| May 12, 2026 | card        | 100          | 4             | 4            |
+| May 12, 2026 | cod         | 44           | 2             | 4.55         |
+| May 12, 2026 | netbanking  | 21           | 0             | 0            |
+| May 12, 2026 | upi         | 90           | 2             | 2.22         |
+| May 12, 2026 | wallet      | 47           | 3             | 6.38         |
+| **May 13, 2026** | **card** | **49** | **6** | **12.24** |
+| **May 13, 2026** | **cod** | **21** | **1** | **4.76** |
+| **May 13, 2026** | **netbanking** | **18** | **2** | **11.11** |
+| **May 13, 2026** | **upi** | **195** | **140** | **71.79** |
+| **May 13, 2026** | **wallet** | **15** | **1** | **6.67** |
+| May 14, 2026 | card        | 107          | 7             | 6.54         |
+| May 14, 2026 | cod         | 39           | 4             | 10.26        |
+| May 14, 2026 | netbanking  | 21           | 1             | 4.76         |
+| May 14, 2026 | upi         | 83           | 2             | 2.41         |
+| May 14, 2026 | wallet      | 39           | 3             | 7.69         |
+| May 15, 2026 | card        | 103          | 4             | 3.88         |
+| May 15, 2026 | cod         | 41           | 0             | 0            |
+| May 15, 2026 | netbanking  | 35           | 0             | 0            |
+| May 15, 2026 | upi         | 72           | 3             | 4.17         |
+| May 15, 2026 | wallet      | 37           | 3             | 8.11         |
+| May 16, 2026 | card        | 110          | 4             | 3.64         |
+| May 16, 2026 | cod         | 44           | 0             | 0            |
+| May 16, 2026 | netbanking  | 37           | 1             | 2.7          |
+| May 16, 2026 | upi         | 106          | 4             | 3.77         |
+| May 16, 2026 | wallet      | 38           | 0             | 0            |
+| May 17, 2026 | card        | 114          | 6             | 5.26         |
+| May 17, 2026 | cod         | 29           | 3             | 10.34        |
+| May 17, 2026 | netbanking  | 29           | 1             | 3.45         |
+| May 17, 2026 | upi         | 102          | 6             | 5.88         |
+| May 17, 2026 | wallet      | 29           | 1             | 3.45         |
+| May 18, 2026 | card        | 133          | 4             | 3.01         |
+| May 18, 2026 | cod         | 52           | 2             | 3.85         |
+| May 18, 2026 | netbanking  | 29           | 1             | 3.45         |
+| May 18, 2026 | upi         | 121          | 6             | 4.96         |
+| May 18, 2026 | wallet      | 52           | 4             | 7.69         |
+| May 19, 2026 | card        | 117          | 3             | 2.56         |
+| May 19, 2026 | cod         | 39           | 2             | 5.13         |
+| May 19, 2026 | netbanking  | 38           | 1             | 2.63         |
+| May 19, 2026 | upi         | 88           | 5             | 5.68         |
+| May 19, 2026 | wallet      | 42           | 2             | 4.76         |
+
+### What I found
+The payment failure spike on May 13 was mainly concentrated in UPI.
+On May 13, UPI had a failure rate of 71.79%, compared with 2.22% on May 12. The other payment methods had much lower failure rates:
+UPI accounted for 140 of the 150 failed orders on May 13.
+This confirmed that UPI was the main payment method affected, so I then checked whether the failures were coming from one particular gateway.
+
+## 4. Payment Gateway Investigation
+Next, I checked whether the payment failures within UPI were coming from one particular gateway.
 ### Query
 
 ```sql
