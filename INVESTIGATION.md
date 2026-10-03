@@ -60,6 +60,55 @@ The number of orders was not much different from the days around it. The bigger 
 
 The data also did not show a 60% revenue drop. So I did not assume the case description was correct and moved on to payment failures.
 
+### Realized Revenue Check
+
+I reran the same analysis using only orders where `payment_status = 'paid'`.
+
+### Query
+
+```sql
+SELECT
+    DATE(created_at) AS order_date,
+    COUNT(DISTINCT order_id) AS orders,
+    SUM(total) AS revenue,
+    SUM(total) / COUNT(DISTINCT order_id) AS aov
+FROM ecom.orders
+WHERE created_at >= '2026-05-01'
+  AND created_at < '2026-05-21'
+  AND payment_status = 'paid'
+GROUP BY DATE(created_at)
+ORDER BY order_date;
+```
+| order_date       | orders  | revenue         | aov          |
+| ---------------- | ------- | --------------- | ------------ |
+| May 1, 2026      | 270     | 21,77,124.56    | 8,063.42     |
+| May 2, 2026      | 416     | 32,33,912.22    | 7,773.83     |
+| May 3, 2026      | 406     | 31,44,508.54    | 7,745.09     |
+| May 4, 2026      | 361     | 27,38,593.40    | 7,586.13     |
+| May 5, 2026      | 311     | 22,40,887.62    | 7,205.43     |
+| May 6, 2026      | 311     | 26,37,782.96    | 8,481.62     |
+| May 7, 2026      | 320     | 26,83,070.20    | 8,384.59     |
+| May 8, 2026      | 301     | 20,86,164.12    | 6,930.78     |
+| May 9, 2026      | 333     | 25,90,820.48    | 7,780.24     |
+| May 10, 2026     | 347     | 24,81,583.26    | 7,151.54     |
+| May 11, 2026     | 287     | 21,06,445.80    | 7,339.53     |
+| May 12, 2026     | 290     | 19,48,573.74    | 6,719.22     |
+| **May 13, 2026** | **141** | **8,75,269.90** | **6,207.59** |
+| May 14, 2026     | 269     | 18,41,405.40    | 6,845.37     |
+| May 15, 2026     | 275     | 23,29,698.10    | 8,471.63     |
+| May 16, 2026     | 323     | 24,74,515.08    | 7,661.04     |
+| May 17, 2026     | 283     | 22,09,994.06    | 7,809.17     |
+| May 18, 2026     | 365     | 27,33,704.32    | 7,489.60     |
+| May 19, 2026     | 306     | 22,72,787.90    | 7,427.41     |
+| May 20, 2026     | 300     | 23,61,501.62    | 7,871.67     |
+
+What I found
+The paid-order view shows a much clearer drop on May 13.
+- Paid orders: 141
+- Revenue: ₹8,75,269.90
+- AOV: ₹6,207.59
+Paid orders dropped from 290 on May 12 to 141 on May 13, while realized revenue dropped from ₹19,48,573.74 to ₹8,75,269.90.
+
 ---
 
 ## 2. Payment Status
