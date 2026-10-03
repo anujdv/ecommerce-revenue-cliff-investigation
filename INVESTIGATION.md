@@ -135,6 +135,33 @@ ORDER BY
 ```
 <img width="2164" height="644" alt="Metabase-New question-10_2_2026, 4_41_49 PM" src="https://github.com/user-attachments/assets/2a3bd94f-9954-4000-b30e-1bca36ebb7c1" />
 
+## What I found
+There was a clear increase in failed payments on May 13 compared with the surrounding days.
+This made payment failure one of the main areas to investigate further.
+
+I then drilled down by payment method and found that the increase was mainly concentrated in UPI.
+
+
+### Query
+
+```sql
+SELECT
+    DATE(created_at) AS order_date,
+    payment_status,
+    COUNT(DISTINCT order_id) AS orders,
+    SUM(total) AS order_value
+FROM ecom.orders
+WHERE created_at >= '2026-05-10'
+  AND created_at < '2026-05-20'
+GROUP BY
+    DATE(created_at),
+    payment_status
+ORDER BY
+    order_date,
+    payment_status;
+```
+<img width="2164" height="644" alt="Metabase-New question-10_2_2026, 4_41_49 PM" src="https://github.com/user-attachments/assets/2a3bd94f-9954-4000-b30e-1bca36ebb7c1" />
+
 ### What I found
 
 There was a clear increase in failed payments on May 13 compared with the surrounding days.
